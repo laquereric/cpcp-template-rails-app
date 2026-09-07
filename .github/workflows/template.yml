@@ -40,5 +40,12 @@ jobs:
       # Includes the live half: fetches reference_instance.cid and compares the
       # operations it claims against the ones actually published. That is the
       # check that makes rule 10 more than a formatting rule.
+      # The role boundary is only a boundary if something checks it.
+      - name: Install ArchSpec
+        run: gem install archspec --no-document
+
+      - name: The role boundary holds
+        run: archspec check
+
       - name: The template conforms, and its reference instance is real
         run: ruby bin/check-template.rb

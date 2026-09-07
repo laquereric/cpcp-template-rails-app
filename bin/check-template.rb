@@ -69,6 +69,31 @@ if File.file?(routes)
     fail! "config/routes.rb does not mount RailsCpcp::Engine; a BACK without the seam mounted " \
           "serves no CPCP surface at all"
   end
+  # The three roles are the deploy. A route table that does not branch on ROLE
+  # describes one process, and the compose file describing three would be
+  # deploying the same surface three times.
+  unless src.include?("ROLE")
+    fail! "config/routes.rb never reads ROLE; this template is one image and three roles, " \
+          "and the route table is where they diverge"
+  end
+  %w[back front backjob].each do |role|
+    fail!("config/routes.rb draws no #{role} role") unless src.include?(%("#{role}"))
+  end
+end
+
+# FRONT must have a way to reach BACK that is not a model. If the base
+# controller went missing, every Front:: controller would inherit from
+# ActionController::Base and the only remaining route to data would be the one
+# Archspec forbids.
+front_base = File.join(ROOT, "app", "controllers", "front", "base_controller.rb")
+if File.file?(front_base)
+  src = File.read(front_base)
+  fail!("Front::BaseController offers no pull") unless src.include?("def pull")
+  fail!("Front::BaseController offers no push") unless src.include?("def push")
+  unless src.match?(/BACK_CPCP_ORIGIN/)
+    fail! "Front::BaseController does not read BACK_CPCP_ORIGIN; FRONT has to be told where " \
+          "BACK is, and hardcoding it makes the split undeployable"
+  end
 end
 
 projection = File.join(ROOT, "config", "initializers", "rails_cpcp.rb")

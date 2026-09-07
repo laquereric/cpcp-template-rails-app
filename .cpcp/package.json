@@ -2,7 +2,7 @@
   "kind": "language_implementation_template",
   "version": 1,
   "name": "cpcp-template-rails-app",
-  "description": "Start a Rails application that serves a CPCP seam. Rails at root, standard layout; the CPCP parts are a mount, a projection, and a manifest.",
+  "description": "Start a Rails application that serves a CPCP seam. Rails at root; one image, three roles (FRONT / BACK / BackJob) split by Rails namespace.",
   "language": "ruby",
   "produces": "cpcp-application",
   "contract": {
@@ -24,7 +24,12 @@
   },
   "role_when_copied": {
     "name": "BACK",
-    "note": "A copy of this template is a BACK: it serves the /_cpcp seam. The copy declares its own role block; this template declares none because a template reifies nothing -- it is copied, not run."
+    "also_reified": {
+      "FRONT": "ROLE=front -- draws Front:: and reaches BACK over CPCP; no database",
+      "BackJob": "ROLE=backjob -- no ingress; bin/jobs is the entry point"
+    },
+    "separate_containers": true,
+    "note": "ROLES ARE RAILS NAMESPACES, not a conditional inside one route table. The boundary is a directory -- app/controllers/front, app/controllers/back -- so it is visible in the tree, greppable, and enforceable by Archspec.rb. A role branch that existed only in routes.rb would leave the two roles' code interleaved everywhere else. A copy declares its own role block; a template reifies nothing."
   },
   "layout": {
     "convention": "Rails at root, standard `rails new` layout.",
@@ -32,6 +37,8 @@
     "required": [
       "config/routes.rb",
       "config/initializers/rails_cpcp.rb",
+      "app/controllers/front/base_controller.rb",
+      "app/controllers/back/README.md",
       "app/agents/README.md",
       "Archspec.rb",
       ".cpcp/package.json",
@@ -40,7 +47,8 @@
   },
   "gates": {
     "bin/check-template.rb": "Structure, manifest, and the live reference instance. Ruby, because a Rails developer should be able to read the check that judges their repo.",
-    ".github/workflows/template.yml": "Runs bin/check-template.rb AND the contract's check-repo-format.py. Neither subsumes the other: the format checker holds the .cpcp manifests, the template validator holds everything this template claims that is not a manifest."
+    ".github/workflows/template.yml": "Runs bin/check-template.rb AND the contract's check-repo-format.py. Neither subsumes the other: the format checker holds the .cpcp manifests, the template validator holds everything this template claims that is not a manifest.",
+    "Archspec.rb": "The role split, statically. FRONT may not reference models or Back:: -- it holds no database and shares no process -- and no app code may reach RailsCpcp::Registry, ::Dispatcher or ::Engine. The client is permitted: it is how you go THROUGH the seam."
   },
   "not_included": {
     "a database": "A copy runs `rails new` conventions and brings its own. This template carries the CPCP seam, not an application.",
