@@ -1,0 +1,8 @@
+/.bundle/
+/log/*
+/tmp/*
+/storage/*
+!/log/.keep
+!/tmp/.keep
+.DS_Store
+/.idea/

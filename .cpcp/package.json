@@ -1,0 +1,50 @@
+{
+  "kind": "language_implementation_template",
+  "version": 1,
+  "name": "cpcp-template-rails-app",
+  "description": "Start a Rails application that serves a CPCP seam. Rails at root, standard layout; the CPCP parts are a mount, a projection, and a manifest.",
+  "language": "ruby",
+  "produces": "cpcp-application",
+  "contract": {
+    "repo": "https://github.com/laquereric/coordination-protocol-contract-package",
+    "rev": "1d228e3f378fa3abbc6ffaae452173481944c905",
+    "note": "The revision defining this kind, rule 10, and the scope and role vocabularies a copy of this template will use."
+  },
+  "reference_instance": {
+    "repo": "https://github.com/laquereric/magentic-market-ai-site",
+    "cid": "https://magenticmarket.ai/_cpcp/cid.json",
+    "operations": [
+      "build.list",
+      "build.get",
+      "build.create"
+    ],
+    "liveness": "required",
+    "note": "A running Rails application built this way. An agent reading this template can fetch that CID, see the real operations, call them, and check its own client against actual responses -- which is what rule 10 is for. bin/check-template.rb fetches it and compares.",
+    "verified": "2026-09-07: HTTP 200, publishes exactly the three operations above"
+  },
+  "role_when_copied": {
+    "name": "BACK",
+    "note": "A copy of this template is a BACK: it serves the /_cpcp seam. The copy declares its own role block; this template declares none because a template reifies nothing -- it is copied, not run."
+  },
+  "layout": {
+    "convention": "Rails at root, standard `rails new` layout.",
+    "because": "A template is judged by whether the people who will copy it recognise it. A Ruby developer opening this expects app/, config/, bin/, test/ where Rails puts them; anything else is a puzzle before the first useful line.",
+    "required": [
+      "config/routes.rb",
+      "config/initializers/rails_cpcp.rb",
+      "app/agents/README.md",
+      "Archspec.rb",
+      ".cpcp/package.json",
+      "bin/check-template.rb"
+    ]
+  },
+  "gates": {
+    "bin/check-template.rb": "Structure, manifest, and the live reference instance. Ruby, because a Rails developer should be able to read the check that judges their repo.",
+    ".github/workflows/template.yml": "Runs bin/check-template.rb AND the contract's check-repo-format.py. Neither subsumes the other: the format checker holds the .cpcp manifests, the template validator holds everything this template claims that is not a manifest."
+  },
+  "not_included": {
+    "a database": "A copy runs `rails new` conventions and brings its own. This template carries the CPCP seam, not an application.",
+    "the FRONT": "A CPCP unit is four roles and this template is one of them. See cpcp-template-javascript-app for a FRONT.",
+    "agent declarations": "app/agents/ carries the convention and no agents. An empty roster with a stated reason is a claim; inventing one would be a template asserting capability it has not got."
+  }
+}

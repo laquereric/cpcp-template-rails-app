@@ -1,0 +1,44 @@
+# Gate - a copy of this template still conforms.
+#
+# TWO CHECKERS, AND NEITHER SUBSUMES THE OTHER. check-repo-format holds the
+# .cpcp manifests against the contract; check-template holds everything this
+# template claims that is not a manifest -- the layout, the CPCP wiring, and
+# the live reference instance. Running only one checks half of what is promised.
+name: gate-template
+on:
+  push: { branches: [ main ] }
+  pull_request:
+  workflow_call:
+
+jobs:
+  template:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with: { ruby-version: '3.4' }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+
+      - name: Read the contract revision this template pins
+        id: pin
+        run: |
+          set -euo pipefail
+          rev=$(python3 -c "import json;print(json.load(open('.cpcp/package.json'))['contract']['rev'])")
+          echo "rev=$rev" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch the format checker at that revision
+        uses: actions/checkout@v4
+        with:
+          repository: laquereric/coordination-protocol-contract-package
+          ref: ${{ steps.pin.outputs.rev }}
+          path: .cpcp-contract
+
+      - name: The manifests conform to the format
+        run: python3 .cpcp-contract/tooling/check-repo-format.py .
+
+      # Includes the live half: fetches reference_instance.cid and compares the
+      # operations it claims against the ones actually published. That is the
+      # check that makes rule 10 more than a formatting rule.
+      - name: The template conforms, and its reference instance is real
+        run: ruby bin/check-template.rb
