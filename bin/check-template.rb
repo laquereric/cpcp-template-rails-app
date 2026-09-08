@@ -96,6 +96,48 @@ if File.file?(front_base)
   end
 end
 
+# A PIN THIS TEMPLATE HANDS DOWN, AND THEREFORE HAS TO KEEP.
+#
+# Rails 8.1's ActiveSupport calls ::JSON.parse with two positional arguments,
+# and json 3.0.0 takes one -- so ActiveSupport::JSON.decode raises ArgumentError
+# and every JSON column goes with it. ActiveSupport declares "json" with no
+# constraint, so bundler resolves the newest unless an app says otherwise.
+#
+# The Gemfile explains all that in a comment, and a comment is exactly what gets
+# deleted by the first person running `bundle update` on a copy of this
+# template. The failure they would then hit fires during transaction rollback
+# and replaces the error that caused it, so it does not point back here. Hence a
+# gate rather than prose.
+#
+# Checked with Gem::Requirement rather than by matching a string, so any
+# constraint that genuinely excludes 3.0 passes -- "< 3.0", "~> 2.0", "< 3" --
+# and only one that does not, fails.
+gemfile = File.join(ROOT, "Gemfile")
+if File.file?(gemfile)
+  # Comments stripped: a commented-out pin is not a pin, and a comment ABOUT the
+  # pin must not be mistaken for one.
+  code = File.readlines(gemfile).reject { |l| l.strip.start_with?("#") }.join
+  constraint = code[/^\s*gem\s+["']json["']\s*,\s*(.+?)\s*$/, 1]
+
+  if constraint.nil?
+    fail! 'the Gemfile does not pin "json". Rails 8.1 cannot call json 3.0.0 -- ' \
+          'ActiveSupport::JSON.decode passes two positional arguments to a parse that takes one, ' \
+          'and ActiveRecord::Type::Json#deserialize goes with it. Add: gem "json", "< 3.0"'
+  else
+    requirements = constraint.scan(/["']([^"']+)["']/).flatten
+    begin
+      if Gem::Requirement.new(requirements).satisfied_by?(Gem::Version.new("3.0.0"))
+        fail! "the Gemfile's json constraint #{constraint} still admits 3.0.0, which Rails 8.1 " \
+              "cannot call. The pin has to EXCLUDE it, not merely mention a version"
+      else
+        note "json pinned below 3.0 (#{requirements.join(', ')})"
+      end
+    rescue Gem::Requirement::BadRequirementError
+      fail! "the Gemfile's json constraint #{constraint.inspect} is not a version requirement"
+    end
+  end
+end
+
 projection = File.join(ROOT, "config", "initializers", "rails_cpcp.rb")
 if File.file?(projection)
   src = File.read(projection)
